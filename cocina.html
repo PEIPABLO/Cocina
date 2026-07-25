@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La cocina de a bordo — provisiones y comida diaria</title>
+<style>
+  :root{--pa:#e8d9b0;--pa2:#f2e6c8;--ink:#2b2114;--brown:#4a3826;--gold:#b0842d;--muted:#6b5a3c;--line:#c9b487;--dark:#26221c;--green:#3d7a4d;--red:#7a1f1f;--amber:#b0842d}
+  *{box-sizing:border-box}
+  body{margin:0;padding:20px;background:var(--dark);font-family:Georgia,'Times New Roman',serif;color:var(--ink);display:flex;justify-content:center}
+  #app{width:100%;max-width:860px}
+  h1{color:var(--pa);text-align:center;margin:0 0 2px;letter-spacing:1px}
+  .sub{color:#b6a37a;text-align:center;font-style:italic;margin:0 0 16px;font-size:14px}
+  .card{background:var(--pa);border:3px solid var(--brown);border-radius:12px;padding:14px 16px;margin-bottom:16px;box-shadow:0 5px 18px rgba(0,0,0,.4)}
+  .card h2{margin:0 0 10px;color:var(--brown);font-size:18px;border-bottom:2px solid var(--line);padding-bottom:5px}
+  label{font-size:13px;color:var(--muted)}
+  input,select{padding:6px;border:2px solid var(--line);border-radius:5px;background:var(--pa2);font-family:inherit;font-size:14px}
+  input[type=number]{width:70px;text-align:center}
+  button{font-family:inherit;font-size:14px;padding:8px 14px;background:var(--gold);color:#2b2114;border:2px solid #6b4f1f;border-radius:8px;cursor:pointer;font-weight:bold}
+  button:hover{background:#c6963a}
+  button.sec{background:#2e2a20;color:var(--pa);border-color:var(--brown);font-weight:normal;font-size:13px;padding:6px 11px}
+  .row{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+  .stocks{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:8px}
+  .stk{flex:1 1 200px;text-align:center;border:2px solid var(--line);border-radius:10px;padding:10px;background:var(--pa2)}
+  .stk .big{font-size:36px;font-weight:bold;line-height:1}
+  .stk .lab{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+  .stk .days{font-size:13px;color:var(--brown);margin-top:4px}
+  .stk.ok{border-color:var(--green)} .stk.warn{border-color:var(--amber)} .stk.bad{border-color:var(--red)}
+  .stk .ctrl{margin-top:6px}
+  .crew span.tag{display:inline-flex;align-items:center;gap:4px;background:var(--pa2);border:1px solid var(--line);border-radius:14px;padding:3px 6px 3px 10px;margin:3px;font-size:13px}
+  .crew span.tag b{cursor:pointer;color:var(--red)}
+  .out{margin-top:8px;padding:10px;border-radius:8px;background:var(--pa2);border:1px solid var(--line);font-size:14px;min-height:20px}
+  .out .q{font-weight:bold;font-size:16px}
+  .note{font-size:12px;color:var(--muted);font-style:italic;line-height:1.6;margin-top:6px}
+  .log{font-size:12px;color:var(--muted);max-height:150px;overflow:auto;margin-top:6px}
+  .log div{padding:3px 0;border-bottom:1px dashed var(--line)}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{border:1px solid var(--line);padding:5px 7px;text-align:left}
+  th{background:#ded0a8;color:var(--brown)}
+  .warnbox{background:#3a2c1c;border:1px solid var(--red);border-radius:8px;padding:8px 12px;color:#e7cfa8;font-size:13px;margin-top:8px;display:none}
+</style>
+</head>
+<body>
+<div id="app">
+<h1>🍲 La cocina de a bordo</h1>
+<p class="sub">Provisiones, agua y la comida de cada día · el reino de Itamae · <i>"el miedo se come en un rincón; el valor, en una mesa larga"</i></p>
+
+<div class="card">
+<h2>La despensa</h2>
+<div class="stocks">
+  <div class="stk" id="stkFood"><div class="big" id="foodN">0</div><div class="lab">🍖 Raciones (días de comida)</div><div class="days" id="foodDays"></div>
+    <div class="ctrl"><button class="sec" onclick="chg('food',-1)">−1</button> <button class="sec" onclick="chg('food',1)">+1</button></div></div>
+  <div class="stk" id="stkWater"><div class="big" id="waterN">0</div><div class="lab">💧 Agua (días)</div><div class="days" id="waterDays"></div>
+    <div class="ctrl"><button class="sec" onclick="chg('water',-1)">−1</button> <button class="sec" onclick="chg('water',1)">+1</button></div></div>
+  <div class="stk"><div class="big" id="acN">0</div><div class="lab">🐟 Ingredientes Attack Cuisine</div><div class="days">platos especiales</div>
+    <div class="ctrl"><button class="sec" onclick="chg('ac',-1)">−1</button> <button class="sec" onclick="chg('ac',1)">+1</button></div></div>
+</div>
+<div class="row" style="justify-content:center">
+  <label>Tope de despensa del barco: <input type="number" id="maxStock" min="0"></label>
+  <span class="note" style="margin:0">La bodega de la corbeta da para el doble de bocas: ≈40 raciones-día. Barcos mayores o con bodega mejorada, más.</span>
+</div>
+<div class="warnbox" id="overWarn">⚠ Estáis por encima del tope de la despensa: lo que sobra se pudre o no cabe.</div>
+</div>
+
+<div class="card">
+<h2>Quién come (bocas a bordo)</h2>
+<div class="crew" id="crewList"></div>
+<div class="row" style="margin-top:6px">
+  <input type="text" id="newMouth" placeholder="Añadir boca (pasajero, rescatado…)" style="flex:1 1 200px">
+  <button class="sec" onclick="addMouth()">＋ añadir</button>
+</div>
+<p class="note">Cada boca come <b>1 ración</b> y bebe <b>1 de agua</b> al día. Consumo diario total: <b id="dailyUse">0</b> raciones + <b id="dailyUseW">0</b> agua. Añade a los rescatados de una isla: comen igual hasta que los dejes en puerto.</p>
+</div>
+
+<div class="card">
+<h2>¿Cuánto aguantáis? (autonomía del viaje)</h2>
+<p id="auton" style="font-size:15px"></p>
+<div class="row">
+  <label>Días de la travesía: <input type="number" id="tripDays" min="0" value="4" oninput="calcTrip()"></label>
+  <span class="note" style="margin:0">(míralo en la herramienta 🧭 Rutas)</span>
+</div>
+<div id="tripOut" class="out"></div>
+</div>
+
+<div class="card">
+<h2>El día a día</h2>
+<p class="note" style="margin-top:0">Cada día en el mar: primero Itamae cocina, luego la tripulación consume. Pulsa "avanzar un día" al terminar la jornada.</p>
+<div class="row">
+  <button onclick="advanceDay()">▶ Avanzar un día (consume comida y agua)</button>
+  <button class="sec" onclick="resetLog()">limpiar diario</button>
+</div>
+<div class="warnbox" id="dayWarn"></div>
+<div class="log" id="log"></div>
+</div>
+
+<div class="card">
+<h2>Cocinar — el turno de Itamae</h2>
+<div class="row">
+  <label>Modificador de cocina de Itamae (+): <input type="number" id="cookMod" value="3"></label>
+  <button onclick="cook()">🍳 Cocinar el rancho del día (tirar)</button>
+  <button class="sec" onclick="attackCuisine()">🔥 Preparar un Attack Cuisine</button>
+</div>
+<div id="cookOut" class="out">Aún no has cocinado hoy.</div>
+<p class="note">El rancho tira <b>d20 + mod</b> y da la calidad de la comida (y su efecto). El <b>Attack Cuisine</b> gasta 1 ingrediente especial: quien se lo come gana <b>2d4+2 PG temporales</b> que duran <b>24 horas</b> (comerlo cuesta una acción). Un plato que sepa a hogar levanta a una tripulación asustada — ese es el verdadero poder del chef.</p>
+</div>
+
+<div class="card">
+<h2>Reponer la despensa</h2>
+<div class="row">
+  <button class="sec" onclick="buy('food',20)">Comprar provisiones (20 días · ฿100.000)</button>
+  <button class="sec" onclick="buy('food',1)">Comprar raciones (1 día · ฿5.000)</button>
+  <button class="sec" onclick="buy('water',20)">Barril de agua (20 días · ฿5.000)</button>
+</div>
+<div class="row" style="margin-top:4px">
+  <button onclick="fish()">🎣 Pescar (Supervivencia / aparejos)</button>
+</div>
+<div id="restockOut" class="out">—</div>
+<p class="note">Pescar = 1d6 raciones (más si sacan bien la tirada, tú ajustas). Comprar solo en puerto. Los <b>ingredientes de Attack Cuisine</b> se consiguen con manjares raros o piezas excepcionales — súmalos a mano en la despensa cuando toque.</p>
+</div>
+
+<div class="card">
+<h2>Reglas y consecuencias (referencia)</h2>
+<table>
+<tr><th>Situación</th><th>Efecto</th></tr>
+<tr><td>Un día sin comida</td><td><b>+1 nivel de Agotamiento</b> a toda la tripulación</td></tr>
+<tr><td>Un día sin agua</td><td><b>+2 niveles de Agotamiento</b> a toda la tripulación</td></tr>
+<tr><td>Recuperarse</td><td>Comer y beber + descanso largo quita 1 nivel de Agotamiento</td></tr>
+</table>
+<p class="note"><b>Niveles de Agotamiento:</b> 1) desventaja en pruebas · 2) velocidad a la mitad · 3) desventaja en ataques y salvaciones · 4) PG máx a la mitad · 5) velocidad 0 · 6) muerte. Tope de despensa de la corbeta: 40 raciones-día — el doble de lo estándar (sube aún más con un barco mayor o con la bodega mejorada por Shiro).</p>
+<div style="text-align:center;margin-top:8px"><button class="sec" onclick="resetAll()">↺ reiniciar despensa y tripulación</button></div>
+</div>
+</div>
+
+<script>
+var KEY='opq_cocina_v1';
+function load(){try{return JSON.parse(localStorage.getItem(KEY));}catch(e){return null;}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}}
+var DEF={food:40,water:40,ac:0,maxStock:40,cookMod:3};
+var st=load(); if(!st||typeof st!=='object')st={};
+['food','water','ac','maxStock','cookMod'].forEach(function(k){var v=parseInt(st[k],10);st[k]=isNaN(v)?DEF[k]:v;});
+if(!Array.isArray(st.crew)||!st.crew.length)st.crew=['Itamae','Shiro','Ernesto','Ronan','Merry Go'];
+if(!Array.isArray(st.log))st.log=[];
+
+function d(n){return Math.floor(Math.random()*n)+1;}
+function roll(n,s,m){var t=0,ds=[];for(var i=0;i<n;i++){var x=d(s);t+=x;ds.push(x);}return {t:t+(m||0),ds:ds};}
+function crewSize(){return st.crew.length;}
+
+function renderStock(){
+ document.getElementById('foodN').textContent=st.food;
+ document.getElementById('waterN').textContent=st.water;
+ document.getElementById('acN').textContent=st.ac;
+ document.getElementById('maxStock').value=st.maxStock;
+ var cs=Math.max(1,crewSize());
+ var fd=Math.floor(st.food/cs), wd=Math.floor(st.water/cs);
+ document.getElementById('foodDays').textContent=fd+' día'+(fd===1?'':'s')+' para '+cs+' bocas';
+ document.getElementById('waterDays').textContent=wd+' día'+(wd===1?'':'s')+' para '+cs+' bocas';
+ status('stkFood',fd); status('stkWater',wd);
+ document.getElementById('dailyUse').textContent=cs;
+ document.getElementById('dailyUseW').textContent=cs;
+ document.getElementById('overWarn').style.display=(st.food>st.maxStock||st.water>st.maxStock)?'block':'none';
+ document.getElementById('cookMod').value=st.cookMod;
+ var a=document.getElementById('auton');
+ a.innerHTML='Con la despensa actual y <b>'+cs+' bocas</b>: comida para <b>'+fd+' días</b>, agua para <b>'+wd+' días</b>.';
+ calcTrip();
+}
+function status(id,days){var e=document.getElementById(id);e.className='stk '+(days<=1?'bad':days<=3?'warn':'ok');}
+function chg(k,n){st[k]=Math.max(0,st[k]+n);save();renderStock();}
+function on(id,ev,fn){var e=document.getElementById(id);if(e)e.addEventListener(ev,fn);}
+on('maxStock','input',function(){st.maxStock=parseInt(this.value)||0;save();renderStock();});
+on('cookMod','input',function(){st.cookMod=parseInt(this.value)||0;save();});
+
+function renderCrew(){
+ var h='';st.crew.forEach(function(n,i){h+='<span class="tag">'+n+' <b onclick="delMouth('+i+')">✕</b></span>';});
+ document.getElementById('crewList').innerHTML=h;
+}
+function addMouth(){var v=document.getElementById('newMouth').value.trim();if(!v)return;st.crew.push(v);document.getElementById('newMouth').value='';save();renderCrew();renderStock();}
+function delMouth(i){st.crew.splice(i,1);save();renderCrew();renderStock();}
+
+function calcTrip(){
+ var days=parseInt(document.getElementById('tripDays').value)||0, cs=Math.max(1,crewSize());
+ var needF=days*cs, needW=days*cs;
+ var o=document.getElementById('tripOut');
+ if(days<=0){o.textContent='—';return;}
+ var okF=st.food>=needF, okW=st.water>=needW;
+ var msg='Para '+days+' días necesitáis <b>'+needF+' raciones</b> y <b>'+needW+' de agua</b> ('+cs+' bocas).<br>';
+ msg+= okF? '<span style="color:#3d7a4d">✔ Comida suficiente ('+(st.food-needF)+' de sobra).</span> ' : '<span style="color:#7a1f1f">✗ Falta comida: os quedaréis '+(Math.ceil((needF-st.food)/cs))+' día(s) sin comer → Agotamiento.</span> ';
+ msg+= okW? '<span style="color:#3d7a4d">✔ Agua suficiente.</span>' : '<span style="color:#7a1f1f">✗ Falta agua: '+(Math.ceil((needW-st.water)/cs))+' día(s) sin beber → doble Agotamiento.</span>';
+ o.innerHTML=msg;
+}
+on('tripDays','input',calcTrip);
+
+function advanceDay(){
+ var cs=crewSize(); if(cs===0){return;}
+ var warns=[];
+ if(st.food<cs){warns.push('faltó COMIDA → +1 Agotamiento a toda la tripulación');}
+ if(st.water<cs){warns.push('faltó AGUA → +2 Agotamiento a toda la tripulación');}
+ st.food=Math.max(0,st.food-cs); st.water=Math.max(0,st.water-cs);
+ var line='Jornada: '+cs+' bocas comen y beben.'+(warns.length?' ⚠ '+warns.join(' · '):'')+' Quedan '+st.food+' raciones, '+st.water+' agua.';
+ st.log.unshift(line);
+ var wb=document.getElementById('dayWarn');
+ if(warns.length){wb.style.display='block';wb.innerHTML='⚠ Hoy '+warns.join(' y ')+'.';}else{wb.style.display='none';}
+ save();renderStock();renderLog();
+}
+function renderLog(){document.getElementById('log').innerHTML=st.log.length?st.log.map(function(l){return '<div>'+l+'</div>';}).join(''):'<div>El diario de a bordo está en blanco.</div>';}
+function resetLog(){st.log=[];save();renderLog();document.getElementById('dayWarn').style.display='none';}
+
+var TIERS=[
+ {min:99,q:'★ OBRA MAESTRA',c:'#8e44ad',t:'Un plato digno de un Rey del Mar. Cuenta como Attack Cuisine para TODA la tripulación: cada uno gana 2d4+2 PG temporales durante 24 horas. Nadie olvidará esta cena.'},
+ {min:16,q:'Excelente',c:'#3d7a4d',t:'Sabe a hogar. La tripulación gana PG temporales (1d4) hasta el próximo descanso, o ventaja en la primera salvación de la jornada. El barco entero sonríe.'},
+ {min:11,q:'Bueno',c:'#b0842d',t:'Un buen rancho caliente. Bien alimentados: nadie flaquea hoy por el estómago. Pequeño empujón de moral a tu criterio.'},
+ {min:6, q:'Normal',c:'#6b5a3c',t:'Comida decente. Cumple: la tripulación queda alimentada, sin más.'},
+ {min:-99,q:'Quemado',c:'#7a1f1f',t:'Sabe a suela y a gasoil. Alimenta igual (cuenta como ración), pero la moral baja: nadie repite. Itamae jura que la olla estaba maldita.'}
+];
+function cook(){
+ var r=roll(1,20,st.cookMod);
+ var tier=TIERS.find(function(x){return r.t>=x.min;}) || TIERS[TIERS.length-1];
+ var nat20=r.ds[0]===20;
+ if(nat20)tier=TIERS[0];
+ var o=document.getElementById('cookOut');
+ o.innerHTML='<span class="q" style="color:'+tier.c+'">'+tier.q+'</span> &nbsp;<small>(d20='+r.ds[0]+' +'+st.cookMod+' = '+r.t+(nat20?' ¡crítico!':'')+')</small><br>'+tier.t;
+ st.log.unshift('Cocina: '+tier.q+' (tirada '+r.t+').');save();renderLog();
+}
+function attackCuisine(){
+ var o=document.getElementById('cookOut');
+ if(st.ac<=0){o.innerHTML='<span style="color:#7a1f1f">No tienes ingredientes de Attack Cuisine.</span> Consíguelos con manjares raros o piezas excepcionales (súmalos en la despensa).';return;}
+ st.ac--; save();renderStock();
+ var h=roll(2,4,2);
+ o.innerHTML='<span class="q" style="color:#8e44ad">🔥 Attack Cuisine</span><br>Un plato de poder. Quien se lo coma (una acción) gana <b>'+h.t+' PG temporales</b> ('+h.ds.join('+')+'+2) que <b>duran 24 horas</b>. Queda '+st.ac+' ingrediente(s) especial(es).';
+ st.log.unshift('Attack Cuisine preparado (+'+h.t+' PG temp 24h).');save();renderLog();
+}
+
+function buy(k,n){st[k]+=n;save();renderStock();document.getElementById('restockOut').textContent='Comprado: +'+n+' '+(k==='food'?'raciones':'de agua')+'. (Recuerda descontar los ฿ del grupo.)';}
+function fish(){var r=roll(1,6,0);st.food+=r.t;save();renderStock();document.getElementById('restockOut').innerHTML='🎣 Pesca: <b>+'+r.t+' raciones</b> (1d6). Súmale más si Itamae/Ernesto sacan buena tirada de Supervivencia.';st.log.unshift('Pesca: +'+r.t+' raciones.');save();renderLog();}
+
+function resetAll(){if(!confirm('¿Reiniciar despensa y tripulación a los valores iniciales?'))return;st={food:40,water:40,ac:0,maxStock:40,crew:['Itamae','Shiro','Ernesto','Ronan','Merry Go'],cookMod:3,log:[]};save();renderAll();}
+function renderAll(){renderStock();renderCrew();renderLog();}
+renderAll();
+</script>
+</body>
+</html>
